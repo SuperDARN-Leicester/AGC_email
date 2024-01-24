@@ -31,9 +31,6 @@ packet_to_log = bytearray([0x55, 0x01, 0x01, 0x01, 0x03])
 
 def email_send():
     # Private environment variables.
-    #email_sender = 'superdarn.finland@gmail.com'
-    #email_password = 'dejlrsgwfcibsivd'
-    #email_receiver_one = 'cel24@leicester.ac.uk'
     # Email_receiver_two = os.environ.get('EMAIL_TWO')
     email_sender = os.environ.get('SENDER')
     email_password = os.environ.get('SENDER_P')
