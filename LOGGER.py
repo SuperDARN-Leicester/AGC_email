@@ -17,7 +17,7 @@ e_send.write(str(formatted_time))
 start_time = datetime.now()
 e_send.close()
 radar_position = pd.read_csv("/home/radar_test/AGC/AGC_email/antenna_positions.csv")
-ser = serial.Serial("/dev/ttyUSB0")
+ser = serial.Serial("/dev/ttyS0")
 #ser = serial.Serial("COM1")
 ser.baudrate = 9600
 ser.bytesize = 8
@@ -48,7 +48,7 @@ def email_send():
     em['Subject'] = subject
     em.attach(MIMEText(body, "plain"))
 
-    filename = "/home/radar_test/AGC/error_log.txt"
+    filename = "/home/radar_test/AGC//AGC_email/error_log.txt"
     attachment = open(filename, "rb")
     attachment_package = MIMEBase("application", "octet-stream")
     attachment_package.set_payload(attachment.read())
@@ -68,7 +68,7 @@ def email_send():
 
 
 def logging_stuff():
-    e_send = open(r'/home/radar_test/AGC/error_log.txt', 'a')
+    e_send = open(r'/home/radar_test/AGC/AGC_email/error_log.txt', 'a')
     fault_counter = 0
     attempt_counter = 0
 
