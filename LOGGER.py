@@ -9,14 +9,14 @@ import time
 import pandas as pd
 import serial
 # Set log file for the email attachment.
-e_send = open(r'/home/radar_test/AGC/error_log.txt', 'a')
+e_send = open(r'/home/radar_test/AGC/AGC_email/error_log.txt', 'a')
 formatted_time = time.strftime("  %d-%m-%Y"   "  %T" "\n")
 formatted_time_log = time.strftime("  %d-%m-%Y"   "  %T ")
 e_send.write("AGC Commander Log file.   Start Time: ")
 e_send.write(str(formatted_time))
 start_time = datetime.now()
 e_send.close()
-radar_position = pd.read_csv("/home/radar_test/AGC/antenna_positions.csv")
+radar_position = pd.read_csv("/home/radar_test/AGC/AGC_email/antenna_positions.csv")
 ser = serial.Serial("/dev/ttyUSB0")
 #ser = serial.Serial("COM1")
 ser.baudrate = 9600
