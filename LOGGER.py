@@ -48,7 +48,7 @@ def email_send():
     em['Subject'] = subject
     em.attach(MIMEText(body, "plain"))
 
-    filename = "/home/radar_test/AGC//AGC_email/error_log.txt"
+    filename = "/home/radar_test/AGC/AGC_email/error_log.txt"
     attachment = open(filename, "rb")
     attachment_package = MIMEBase("application", "octet-stream")
     attachment_package.set_payload(attachment.read())
