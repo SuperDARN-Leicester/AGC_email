@@ -16,7 +16,7 @@ e_send.write("AGC Commander Log file.   Start Time: ")
 e_send.write(str(formatted_time))
 start_time = datetime.now()
 e_send.close()
-radar_position = pd.read_csv("/home/radar_test/AGC/AGC_email/antenna_positions.csv")
+radar_position = pd.read_csv("/home/radar/UOL_scripts/AGC_commander/antenna_positions.csv")
 ser = serial.Serial("/dev/ttyS0")
 #ser = serial.Serial("COM1")
 ser.baudrate = 9600
