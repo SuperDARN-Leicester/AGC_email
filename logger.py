@@ -8,8 +8,15 @@ import os
 import time
 import pandas as pd
 import serial
+
+# Delete previous log, if existing (optional).
+try:
+    os.remove('/home/radar/UOL_scripts/AGC_email/error_log.txt')
+except OSError:
+    pass
+
 # Set log file for the email attachment.
-e_send = open(r'/home/radar_test/AGC/AGC_email/error_log.txt', 'a')
+e_send = open(r'/home/radar/UOL_scripts/AGC_email/error_log.txt', 'a')
 formatted_time = time.strftime("  %d-%m-%Y"   "  %T" "\n")
 formatted_time_log = time.strftime("  %d-%m-%Y"   "  %T ")
 e_send.write("AGC Commander Log file.   Start Time: ")
@@ -17,13 +24,14 @@ e_send.write(str(formatted_time))
 start_time = datetime.now()
 e_send.close()
 radar_position = pd.read_csv("/home/radar/UOL_scripts/Antenna_Positions_CSV/antenna_positions.csv")
-ser = serial.Serial("/dev/ttyS0")
+ser = serial.Serial("/dev/ttyS1")
 #ser = serial.Serial("COM1")
 ser.baudrate = 9600
 ser.bytesize = 8
 ser.parity = 'N'
 ser.stopbits = 1
-ser.timeout = 1
+ser.timeout = 0.1
+
 
 packet_to_send = bytearray([0x55, 0x01, 0x01, 0x01, 0x03])
 logging_check = bytearray([0xff])
@@ -34,7 +42,8 @@ def email_send():
     # Email_receiver_two = os.environ.get('EMAIL_TWO')
     email_sender = os.environ.get('SENDER')
     email_password = os.environ.get('SENDER_P')
-    email_receiver_one = os.environ.get('RECIPIENT')
+    email_recipients = [os.environ.get('RECIPIENT1'), os.environ.get('RECIPIENT2')]
+
     # Email body and subject etc.
     subject = 'Transmitter fault in Finland'
     body = """  
@@ -44,11 +53,11 @@ def email_send():
     """
     em = MIMEMultipart()
     em['From'] = email_sender
-    em['To'] = email_receiver_one
+    em['To'] = ', '.join(email_recipients)
     em['Subject'] = subject
     em.attach(MIMEText(body, "plain"))
 
-    filename = "/home/radar_test/AGC/AGC_email/error_log.txt"
+    filename = "/home/radar/UOL_scripts/AGC_email/error_log.txt"
     attachment = open(filename, "rb")
     attachment_package = MIMEBase("application", "octet-stream")
     attachment_package.set_payload(attachment.read())
@@ -61,20 +70,17 @@ def email_send():
     gmail_server = smtplib.SMTP('smtp.gmail.com', 587)
     gmail_server.starttls()
     gmail_server.login(email_sender, email_password)
-
-    gmail_server.sendmail(email_sender, email_receiver_one, text)
+    gmail_server.sendmail(email_sender, email_recipients, text)
     gmail_server.quit()
 
 
-
 def logging_stuff():
-    e_send = open(r'/home/radar_test/AGC/AGC_email/error_log.txt', 'a')
-    fault_counter = 0
+    e_send = open(r'/home/radar/UOL_scripts/AGC_email/error_log.txt', 'a')
+    fault_counter = [0] * 16
     attempt_counter = 0
 
-    for i in range(1):
+    for i in range(3):
 
-        attempt_counter = attempt_counter + 1
         for radar in range(16):
             true_radar_position = (radar_position.loc[radar].at['agc'])
             rad_value = int(true_radar_position, 16)
@@ -104,7 +110,7 @@ def logging_stuff():
                     e_send.write(str(formatted_time))
                     e_send.write("\n")
                 else:
-                    fault_counter = fault_counter + 1
+                    fault_counter[radar] = fault_counter[radar] + 1
                     e_send.write("ANTENNA: ")
                     e_send.write(str(radar + 1))
                     e_send.write(" Check Status of Transmitter")
@@ -120,11 +126,22 @@ def logging_stuff():
                 e_send.write(str(formatted_time))
                 e_send.write("\n")
 
-        if fault_counter > 0:
-            e_send.close()
-            #print(fault_counter)
-            #print(attempt_counter)
-            email_send() #Hash this out if you dont want to get emails while fault finding.
+    # We only want to report a fault if it responded with a fault 3 of 3 attempts. Otherwise consider a glitch and ignore.
+    for radar in range(16):
+        if fault_counter[radar] == 3:
+           fault_counter[radar] = 1
+        else:
+            fault_counter[radar] = 0
+
+    ignore_mask = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,] #Transmitters with 0 will be ignored. Used for known problem transmitters.
+    fault_counter = [fault_counter[i] * ignore_mask[i] for i in range(16)] #Apply ignore mask
+
+    if any(x >= 1 for x in fault_counter): #Only email if faults present.
+        e_send.close()
+        print("TX Fault")
+        print(fault_counter)
+        email_send() #Hash this out if you dont want to get emails while fault finding.
+
 
 
 logging_stuff()
